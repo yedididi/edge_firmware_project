@@ -1,12 +1,16 @@
 #include "device_driver.h"
 
+enum _motorState {STOP, FORWARD, REVERSE};
+int speed = 1;
+int motorState = STOP;
+
 static void Sys_Init(void)
 {
 	Clock_Init();
 	LED_Init();
 	Uart_Init(115200);
 	Key_Poll_Init();
-    Motor_Init();
+    //Motor_Init();
     TIM3_Out_Init();
 }
 
@@ -23,12 +27,28 @@ void Main(void)
             {
                 Uart_Printf("%c\n", USART1->DR);
                 if (USART1->DR == 'F')
-                    Motor_Forward();
+                    motorState = FORWARD;
                 else if (USART1->DR == 'R')
-                    Motor_Reverse();
+                    motorState = REVERSE;
                 else if (USART1->DR == 'S')
-                    Motor_Stop();
+                    motorState = STOP;
+                else if (USART1->DR >= '1' && USART1->DR <= '9')
+                    speed = USART1->DR - '0';
                 break;
+            }
+
+            switch (motorState)
+            {
+                case STOP:
+                    Motor_Stop();
+                    break;
+             
+                case FORWARD:
+                    Motor_Forward(speed);
+                    break;
+             
+                case REVERSE:
+                    Motor_Reverse(speed);
             }
         }
     }
