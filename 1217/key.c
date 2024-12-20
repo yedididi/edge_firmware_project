@@ -8,7 +8,7 @@ void Key_Poll_Init(void)
 
 #define COUNT_FOR_CHAT 		20000
 
-static int Key_Check_Input(void)
+int Key_Check_Input(void)
 {
 	return ~Macro_Extract_Area(GPIOB->IDR, 0x3, 6) & 0x3;
 }

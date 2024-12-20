@@ -15,5 +15,6 @@ void motor_pwm_init();
 void control_motor(int speed, int direction);
 
 enum _dir {STOP, FORWARD, REVERSE};
+enum _fan {UARTCONTROL, LIGHTCONTROL, AUTOMATIC};
 
 #endif

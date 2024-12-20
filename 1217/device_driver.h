@@ -4,6 +4,7 @@
 #include "malloc.h"
 #include "motor.h"
 #include "pwm.h"
+#include "adc.h"
 
 // Uart.c
 
@@ -36,6 +37,7 @@ extern void Key_Poll_Init(void);
 extern int Key_Get_Pressed(void);
 extern void Key_Wait_Key_Released(void);
 extern int Key_Wait_Key_Pressed(void);
+extern int Key_Check_Input(void);
 
 
 // Timer.c
@@ -58,3 +60,10 @@ extern int SysTick_Check_Timeout(void);
 extern unsigned int SysTick_Get_Time(void);
 extern unsigned int SysTick_Get_Load_Time(void);
 extern void SysTick_Stop(void);
+
+//adc
+void Adc_Cds_Init(void);
+void Adc_Start(void);
+void Adc_Stop(void);
+int Adc_Get_Status(void);
+int Adc_Get_Data(void);

@@ -100,7 +100,7 @@ void control_motor(int speed, int direction)
     if (speed < 1) speed = 1;     // 최소 속도 제한
     if (speed > 10) speed = 10;   // 최대 속도 제한
 
-    int duty_cycle = speed * 100; // 듀티 사이클 계산 (1~10 → 100~1000)
+    int duty_cycle = 460 + (40 * speed); // 듀티 사이클 계산 (1~10 → 100~1000)
 
     if (direction == REVERSE) // 정방향
     {
