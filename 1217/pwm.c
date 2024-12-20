@@ -48,7 +48,7 @@ void TIM3_Out_Freq_Generation(int speed)
 	TIM2->PSC = (int)(TIMXCLK / TIM2_FREQ + 0.5) - 1;
 
 	// 요청한 주파수가 되도록 ARR 설정
-	TIM2->ARR = TIM2_FREQ;
+	//TIM2->ARR = TIM2_FREQ;
 
 	// Duty Rate 50%가 되도록 CCR3 설정 arr/2 값 넣으면됨
 	//motor 하나는 양, 다른건 음으로 넣어야 하는데 이렇게 같은 값을 줘도 되나??
@@ -75,7 +75,8 @@ void motor_pwm_init()
     Macro_Set_Bit(RCC->APB2ENR, 2);
 
     // 2. PA2, PA3을 출력 모드(Alternate Function, Push-Pull)로 설정
-    Macro_Write_Block(GPIOA->CRL, 0xFF, 0xB4, 8); // PA2, PA3의 MODER = 1010 (50MHz, AF Push-Pull)
+    Macro_Write_Block(GPIOA->CRL, 0xF, 0xb, 8); // PA2, PA3의 MODER = 1011 (50MHz, AF Push-Pull)
+	Macro_Write_Block(GPIOA->CRL, 0xF, 0xb, 12);
 
     // 3. PA2, PA3을 기본값 LOW로 설정
     Macro_Clear_Bit(GPIOA->ODR, 2); // PA2 LOW
@@ -85,14 +86,13 @@ void motor_pwm_init()
     Macro_Set_Bit(RCC->APB1ENR, 0);
 
     // 5. TIM2 기본 설정
-    TIM2->CR1 = 0;                        // 기본 설정 (Counter Disabled)
     TIM2->PSC = 71;                       // 프리스케일러 설정 (72MHz / (71+1) = 1MHz)
     TIM2->ARR = 1000 - 1;                 // Auto-Reload 레지스터 (1kHz 주기)
-    TIM2->CCMR1 = (6 << 12) | (6 << 4);   // CH2, CH3: PWM Mode 1
-    TIM2->CCER = (1 << 4) | (1 << 8);     // CH2, CH3 활성화 (OC2E, OC3E 비트)
-    TIM2->CCR2 = 0;                       // 초기 듀티 사이클 0% (CH2)
+    TIM2->CCMR2 = (6 << 12) | (6 << 4);   // CH2, CH3: PWM Mode 1
+    TIM2->CCER = (1 << 12) | (1 << 8);     // CH2, CH3 활성화 (OC2E, OC3E 비트)
     TIM2->CCR3 = 0;                       // 초기 듀티 사이클 0% (CH3)
-    TIM2->CR1 |= (1 << 0);                // 카운터 활성화 (CEN 비트)
+    TIM2->CCR4 = 0;                       // 초기 듀티 사이클 0% (CH4)
+	TIM2->CR1 = (1<<0)|(0<<3)|(0<<4);
 }
 
 void control_motor(int speed, int direction)
@@ -104,17 +104,17 @@ void control_motor(int speed, int direction)
 
     if (direction == REVERSE) // 정방향
     {
-        TIM2->CCR2 = duty_cycle; // PA2 (CH2) -> PWM HIGH
-        TIM2->CCR3 = 0;          // PA3 (CH3) -> PWM LOW
+        TIM2->CCR3 = duty_cycle; // PA2 (CH2) -> PWM HIGH
+        TIM2->CCR4 = 0;          // PA3 (CH3) -> PWM LOW
     }
     else if (direction == FORWARD) // 역방향
     {
-        TIM2->CCR2 = 0;          // PA2 (CH2) -> PWM LOW
-        TIM2->CCR3 = duty_cycle; // PA3 (CH3) -> PWM HIGH
+        TIM2->CCR3 = 0;          // PA2 (CH2) -> PWM LOW
+        TIM2->CCR4 = duty_cycle; // PA3 (CH3) -> PWM HIGH
     }
 	else if (direction == STOP)
 	{
-		TIM2->CCR2 = 0; // PA2 (CH2) -> PWM LOW
-		TIM2->CCR3 = 0; // PA3 (CH3) -> PWM LOW
+		TIM2->CCR3 = 0; // PA2 (CH2) -> PWM LOW
+		TIM2->CCR4 = 0; // PA3 (CH3) -> PWM LOW
 	}
 }

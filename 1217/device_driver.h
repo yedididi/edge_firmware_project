@@ -3,6 +3,7 @@
 #include "macro.h"
 #include "malloc.h"
 #include "motor.h"
+#include "pwm.h"
 
 // Uart.c
 
@@ -57,6 +58,3 @@ extern int SysTick_Check_Timeout(void);
 extern unsigned int SysTick_Get_Time(void);
 extern unsigned int SysTick_Get_Load_Time(void);
 extern void SysTick_Stop(void);
-
-
-enum _dir {STOP, FORWARD, REVERSE};

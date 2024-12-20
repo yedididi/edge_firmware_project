@@ -6,14 +6,15 @@ static void Sys_Init(void)
 	LED_Init();
 	Uart_Init(115200);
 	Key_Poll_Init();
-    //Motor_Init();
-    //TIM3_Out_Init();
+    // Motor_Init();
+    // TIM3_Out_Init();
     motor_pwm_init();
 }
 
 void Main(void)
 {
-    int speed = 1;
+    int speed = 5;
+    int motorState = STOP;
     Sys_Init();
     Uart_Printf("<Motor project level 1>\n");
 
@@ -23,14 +24,14 @@ void Main(void)
         {
             Uart_Printf("%c\n", USART1->DR);
             if (USART1->DR == 'F')
-                control_motor(speed, FORWARD);
+                motorState = FORWARD;
             else if (USART1->DR == 'R')
-                control_motor(speed, REVERSE);
+                motorState = REVERSE;
             else if (USART1->DR == 'S')
-                control_motor(speed, STOP);
+                motorState = STOP;
             else if (USART1->DR >= '1' && USART1->DR <= '9')
                 speed = USART1->DR - '0';
-            break;
+            control_motor(speed, motorState);
         }
     }
 }

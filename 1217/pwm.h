@@ -14,5 +14,6 @@ void TIM3_Out_Stop(void);
 void motor_pwm_init();
 void control_motor(int speed, int direction);
 
+enum _dir {STOP, FORWARD, REVERSE};
 
 #endif
