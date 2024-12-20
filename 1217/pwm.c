@@ -7,7 +7,7 @@
 void TIM3_Out_Init(void)
 {
 	//TIM3를 사용하려면 해당 타이머에 클럭이 공급되어야 한다. 따라서 TIM3 타이머의 클럭을 활성화한다.
-	Macro_Set_Bit(RCC->APB1ENR, 1);
+	Macro_Set_Bit(RCC->APB1ENR, 0);
 
 	//APB2ENR 레지스터는 APB2 버스의 주변 장치 클럭을 활성화하는 레지스터이다.
 	//2번 비트를 활성화 시켰으므로 GPIOA의 클럭을 활성화한다.
@@ -17,8 +17,14 @@ void TIM3_Out_Init(void)
 	//우리는 pa2, pa3번을 사용하므로 아래와 같이 두 줄로 0xb로 설정
 	//0xb는 출력 속도가 50MHz인 대체 기능 푸시풀 모드(AF-PP) 라는뜻
 	//즉, 아래 두 줄은 GPIOA 핀 2번, 3번을 TIM3의 PWM 출력 핀으로 설정함
+	//PA2, PA3을 출력 모드(Alternate Function, Push-Pull)로 설정
+    //Macro_Write_Block(GPIOA->CRL, 0xFF, 0xB4, 8); // PA2, PA3의 MODER = 1010 (50MHz, AF Push-Pull)
 	Macro_Write_Block(GPIOA->CRL,0xf,0xb,8);
 	Macro_Write_Block(GPIOA->CRL,0xf,0xb,12);
+
+	// PA2, PA3을 기본값 LOW로 설정
+    Macro_Clear_Bit(GPIOA->ODR, 2); // PA2 LOW
+    Macro_Clear_Bit(GPIOA->ODR, 3); // PA3 LOW
 
 	//TIM3->CCMR2는 TIM3의 채널 3, 4의 캡쳐/비교 모드 설정 레지스터이다.
 	//이렇게 0x6으로 설정하면 PWM 모드 1로 설정이 된다
@@ -61,4 +67,54 @@ void TIM3_Out_Stop(void)
 {
 	Macro_Clear_Bit(TIM3->CR1, 0);
 	Macro_Clear_Bit(TIM3->DIER, 0);
+}
+
+void motor_pwm_init()
+{
+    // 1. GPIOA 클럭 활성화 (RCC->APB2ENR의 IOPAEN 비트 설정)
+    Macro_Set_Bit(RCC->APB2ENR, 2);
+
+    // 2. PA2, PA3을 출력 모드(Alternate Function, Push-Pull)로 설정
+    Macro_Write_Block(GPIOA->CRL, 0xFF, 0xB4, 8); // PA2, PA3의 MODER = 1010 (50MHz, AF Push-Pull)
+
+    // 3. PA2, PA3을 기본값 LOW로 설정
+    Macro_Clear_Bit(GPIOA->ODR, 2); // PA2 LOW
+    Macro_Clear_Bit(GPIOA->ODR, 3); // PA3 LOW
+
+    // 4. TIM2 클럭 활성화 (RCC->APB1ENR의 TIM2EN 비트 설정)
+    Macro_Set_Bit(RCC->APB1ENR, 0);
+
+    // 5. TIM2 기본 설정
+    TIM2->CR1 = 0;                        // 기본 설정 (Counter Disabled)
+    TIM2->PSC = 71;                       // 프리스케일러 설정 (72MHz / (71+1) = 1MHz)
+    TIM2->ARR = 1000 - 1;                 // Auto-Reload 레지스터 (1kHz 주기)
+    TIM2->CCMR1 = (6 << 12) | (6 << 4);   // CH2, CH3: PWM Mode 1
+    TIM2->CCER = (1 << 4) | (1 << 8);     // CH2, CH3 활성화 (OC2E, OC3E 비트)
+    TIM2->CCR2 = 0;                       // 초기 듀티 사이클 0% (CH2)
+    TIM2->CCR3 = 0;                       // 초기 듀티 사이클 0% (CH3)
+    TIM2->CR1 |= (1 << 0);                // 카운터 활성화 (CEN 비트)
+}
+
+void control_motor(int speed, int direction)
+{
+    if (speed < 1) speed = 1;     // 최소 속도 제한
+    if (speed > 10) speed = 10;   // 최대 속도 제한
+
+    int duty_cycle = speed * 100; // 듀티 사이클 계산 (1~10 → 100~1000)
+
+    if (direction == REVERSE) // 정방향
+    {
+        TIM2->CCR2 = duty_cycle; // PA2 (CH2) -> PWM HIGH
+        TIM2->CCR3 = 0;          // PA3 (CH3) -> PWM LOW
+    }
+    else if (direction == FORWARD) // 역방향
+    {
+        TIM2->CCR2 = 0;          // PA2 (CH2) -> PWM LOW
+        TIM2->CCR3 = duty_cycle; // PA3 (CH3) -> PWM HIGH
+    }
+	else if (direction == STOP)
+	{
+		TIM2->CCR2 = 0; // PA2 (CH2) -> PWM LOW
+		TIM2->CCR3 = 0; // PA3 (CH3) -> PWM LOW
+	}
 }

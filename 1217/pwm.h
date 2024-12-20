@@ -11,5 +11,8 @@ void TIM3_Out_Init(void);
 void TIM3_Out_Freq_Generation(int speed);
 void TIM3_Out_Stop(void);
 
+void motor_pwm_init();
+void control_motor(int speed, int direction);
+
 
 #endif
